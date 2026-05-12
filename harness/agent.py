@@ -5,6 +5,25 @@ from openai import OpenAI
 # Load OPENAI_API_KEY from .env into the environment
 load_dotenv()
 
+# The system prompt — read by the model on every turn, because the full 
+# history (including this) is resent on every API call. Edit deliberately:
+# every sentence here affects every interaction.
+SYSTEM_PROMPT = """\
+You are a coding assistant running in a terminal, helping a developer with
+software engineering tasks.
+
+Be concise. Prefer short, direct answers over long ones. When the user asks
+for code, return the code with minimal explanation unless they ask for
+more.
+
+When returning code, use fenced code blocks and specify the language.
+
+You do not currently have access to any tools — you cannot read files, run
+commands, or modify anything on the user's system. If the user asks you to
+do something that would require a tool, say so plainly and suggest they
+describe the relevant content directly.
+"""
+
 # The model we'll use throughout the course
 MODEL = "gpt-4o-mini"
 
@@ -17,7 +36,7 @@ def run():
 
     # The conversation history. This is the entire memory of the agent.
     # Every turn, we append to it and send the whole thing to the model.
-    messages = []
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     print("Agent ready. Type 'quit' or 'exit' to leave.\n")
 
