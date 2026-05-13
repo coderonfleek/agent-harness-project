@@ -1,6 +1,9 @@
 import os
+import json
 from dotenv import load_dotenv
 from openai import OpenAI
+
+from harness.tools import registry
 
 # Load OPENAI_API_KEY from .env into the environment
 load_dotenv()
@@ -18,10 +21,8 @@ more.
 
 When returning code, use fenced code blocks and specify the language.
 
-You do not currently have access to any tools — you cannot read files, run
-commands, or modify anything on the user's system. If the user asks you to
-do something that would require a tool, say so plainly and suggest they
-describe the relevant content directly.
+You have access to five filesystem tools — read, write, list, mkdir,
+delete — operating on a workspace directory. Use them whenever a task involves reading, modifying, or organizing files. Paths are relative to the workspace root. Prefer reading and writing real files over describing them in conversation.
 """
 
 # The model we'll use throughout the course
@@ -56,20 +57,47 @@ def run():
         # 3. Append the user's message to the history
         messages.append({"role": "user", "content": user_input})
 
-        # 4. Call the model with the full conversation so far
+        # 4. Call the model with the history AND the available tools. 
+        # The model can now respond with text OR a tool call.
         response = client.chat.completions.create(
             model=MODEL,
             messages=messages,
+            tools=registry.get_schemas(),
         )
 
         # 5. Extract the assistant's reply
-        assistant_message = response.choices[0].message.content
+        message = response.choices[0].message
 
-        # 6. Append the assistant's reply to the history
-        messages.append({"role": "assistant", "content": assistant_message})
+        # If the model asked for a tool call, handle it before producing the user-facing reply. Minimum-viable dispatch: one round only.
+        if message.tool_calls:
+            # Step 1: record the model's tool-call message in history so the upcoming tool-result messages have something to reference.
+            messages.append(message)
 
-        # 7. Show the user
-        print(f"\nagent > {assistant_message}\n")
+            # Step 2: run each requested tool and append its result to history, using the matching tool_call_id so the model can pair them up.
+            for call in message.tool_calls:
+                arguments = json.loads(call.function.arguments)
+                result = registry.dispatch(call.function.name, arguments)
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": call.id,
+                    "content": result,
+                })
+
+            # Step 3: re-call the model now that the tool results are in context. This second call produces the model's final text reply.
+            response = client.chat.completions.create(
+                model=MODEL,
+                messages=messages,
+                tools=registry.get_schemas(),
+            )
+            message = response.choices[0].message
+        
+
+        # By here, `message` is the model's final text response for this turn —
+        # either from the first call (no tools needed) or the second (after dispatch).
+        assistant_text = message.content
+        messages.append({"role": "assistant", "content": assistant_text})
+
+        print(f"\nagent > {assistant_text}\n")
 
 
 if __name__ == "__main__":
