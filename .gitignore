@@ -10,8 +10,12 @@ __pycache__/
 .venv/
 venv/
 env/
+workspace/
 
 # Editor / OS noise
 .vscode/
 .idea/
 .DS_Store
+
+# Ignore Folders
+workspace/
