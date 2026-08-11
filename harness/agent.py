@@ -133,8 +133,7 @@ def run():
         # 3. Append the user's message to the history
         messages.append({"role": "user", "content": user_input})
 
-        # Full ReAct dispatch loop — replaces the single-round dispatch      # <---- MODIFIED (whole block, was single-round in 3.2)
-        # from 3.2. The model can chain arbitrary tool calls; the loop
+        # Full ReAct dispatch loop — replaces the single-round dispatch
         # terminates when either:
         #   (a) the model emits a text response (no tool calls), or
         #   (b) we've done STEP_BUDGET rounds and force a summary.
