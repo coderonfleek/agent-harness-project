@@ -41,20 +41,27 @@ def read(path: str) -> str:
 
 @tool
 def write(path: str, content: str) -> str:
-    """Write content to a file in the workspace, creating it if needed.
-    Overwrites the file if it already exists. Returns confirmation with byte count."""
-    # Step 1: resolve the target path safely.
-    target = _resolve_path(path)
+    """Write content to a file in the workspace.
 
-    # Step 2: ensure parent directories exist so nested paths like
-    # `notes/research/findings.md` work without a prior mkdir call.
-    target.parent.mkdir(parents=True, exist_ok=True)
+    Overwrites the file if it exists; creates it (and any parent
+    directories) if it doesn't. Path is relative to the workspace root.
 
-    # Step 3: write the content (overwrites if the file exists).
-    target.write_text(content)
+    Cannot be used to write AGENTS.md — that file is memory-managed
+    via the `remember` tool. Use `remember(category, entry)` instead.
+    """
+    # Step 1: refuse AGENTS.md — memory writes must go through remember(). 
+    # Prevents accidental clobbering by treating memory as a regular file.
+    if path == "AGENTS.md" or path.endswith("/AGENTS.md"):
+        return (
+            "[write] AGENTS.md is memory-managed. Use the `remember` tool "
+            "with a category and entry instead of write()."
+        )
 
-    # Step 4: return a structured confirmation the model can verify against.
-    return f"wrote {len(content)} bytes to {path}"
+    # Step 2: (unchanged from previous logic)
+    resolved = _resolve_path(path)
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    resolved.write_text(content)
+    return f"wrote {path}"
 
 
 @tool
