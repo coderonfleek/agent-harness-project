@@ -20,3 +20,4 @@ workspace/
 # Ignore Folders
 workspace/
 .rag_index/
+.harness/
