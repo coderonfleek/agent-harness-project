@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from harness.tools.registry import tool
-from harness.config import WORKSPACE
+from harness.config import WORKSPACE, PLAN_FILENAME
 
 
 def _resolve_path(path: str) -> Path:
@@ -41,21 +41,29 @@ def write(path: str, content: str) -> str:
 
     Cannot be used to write AGENTS.md — that file is memory-managed
     via the `remember` tool. Use `remember(category, entry)` instead.
+
+    Cannot be used to write plan.md — that file is plan-managed via
+    the `update_plan` tool. Use `update_plan(task, status)` instead.
     """
-    # Step 1: refuse AGENTS.md — memory writes must go through remember(). 
-    # Prevents accidental clobbering by treating memory as a regular file.
+    # Step 1a: refuse AGENTS.md — memory writes must go through remember().
     if path == "AGENTS.md" or path.endswith("/AGENTS.md"):
         return (
             "[write] AGENTS.md is memory-managed. Use the `remember` tool "
             "with a category and entry instead of write()."
         )
 
-    # Step 2: (unchanged from previous logic)
+    # Step 1b: refuse plan.md — plan writes must go through update_plan(). 
+    if path == PLAN_FILENAME or path.endswith(f"/{PLAN_FILENAME}"):
+        return (
+            f"[write] {PLAN_FILENAME} is plan-managed. Use the `update_plan` "
+            f"tool with task and status arguments instead of write()."
+        )
+
+    # Step 2: (existing logic unchanged)
     resolved = _resolve_path(path)
     resolved.parent.mkdir(parents=True, exist_ok=True)
     resolved.write_text(content)
     return f"wrote {path}"
-
 
 @tool
 def list(path: str = ".") -> str:
