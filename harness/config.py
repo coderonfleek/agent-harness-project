@@ -166,7 +166,7 @@ PLAN_FILENAME: str = "plan.md"
 # Lower = more nagging but tighter plan freshness. Higher = quieter
 # but more plan drift. 5 is a middle ground: plans stay fresh within
 # a small window of turns, without spamming every turn.
-PLAN_REMINDER_INTERVAL: int = 5
+PLAN_REMINDER_INTERVAL: int = 2
 
 # Maximum characters to inject from plan.md at session start. Plans
 # rarely get near this — a normal plan is a few hundred chars. This
